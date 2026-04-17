@@ -29,12 +29,9 @@ jobs:
 
       - name: Terraform Init
         uses: terraform init
-        working-directory: infra/environments/dev
 
       - name: Terraform Plan
         uses: terraform plan
-        working-directory: infra/environments/dev
 
       - name: Terraform Apply
         uses: terraform apply -auto-approve
-        working-directory: infra/environments/dev
