@@ -1,0 +1,36 @@
+name: Terraform deploy
+
+on:
+  push:
+    paths:
+      - 'infra/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{aecrets.AWS_SECRET_ACCESS_KEY}}
+          region: ap-south-1
+
+      - name: Terraform Init
+        uses: terraform init
+        working-directory: infra/environments/dev
+
+      - name: Terraform Plan
+        uses: terraform plan
+        working-directory: infra/environments/dev
+
+      - name: Terraform Apply
+        uses: terraform apply
+        working-directory: infra/environments/dev
