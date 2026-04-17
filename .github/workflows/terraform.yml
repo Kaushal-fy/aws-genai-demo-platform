@@ -28,10 +28,10 @@ jobs:
           region: ap-south-1
 
       - name: Terraform Init
-        uses: terraform init
+        run: terraform init
 
       - name: Terraform Plan
-        uses: terraform plan
+        run: terraform plan
 
       - name: Terraform Apply
-        uses: terraform apply -auto-approve
+        run: terraform apply -auto-approve
