@@ -6,9 +6,9 @@ module "vpc" {
   cidr = "10.0.0.0/16"
 
   azs = ["ap-south-1a"]
-  public_subnet = ["10.0.0.0/24"]
+  public_subnets = ["10.0.0.0/24"]
 
-  enable_dns_hostname = true
+  enable_dns_hostnames = true
   enable_dns_support = true
 
   enable_nat_gateway = false
