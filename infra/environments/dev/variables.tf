@@ -3,5 +3,5 @@ variable "region" {
 }
 
 variable "project_name" {
-  default "demo-platform"
+  default = "demo-platform"
 }
