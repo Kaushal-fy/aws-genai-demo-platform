@@ -36,6 +36,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::935724796195:role/GitHubActionsTerraformRole
           aws-region: ap-south-1
+          audience: sts.amazonaws.com
 
 
       - name: Terraform Init
