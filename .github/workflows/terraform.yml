@@ -31,12 +31,31 @@ jobs:
 
           echo $TOKEN | cut -d "." -f2 | base64 -d | jq
 
-      - name: Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::935724796195:role/GitHubActionsTerraformRole
-          aws-region: ap-south-1
-          audience: sts.amazonaws.com
+      - name: Manual OIDC Debug
+        run: |
+          # 1. Get the Web Identity Token from GitHub's local server
+          ID_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+
+          echo "Attempting manual AssumeRoleWithWebIdentity..."
+          
+          # 2. Try to assume the role via AWS CLI to see the RAW error
+          aws sts assume-role-with-web-identity \
+            --role-arn "arn:aws:iam::935724796195:role/GitHubActionsTerraformRole" \
+            --role-session-name "GitHubActionsDebug" \
+            --web-identity-token "$ID_TOKEN" \
+            --region ap-south-1 \
+            --debug > aws_debug.log 2>&1 || true
+
+          # 3. Print the error so we can read it in the logs
+          cat aws_debug.log | grep -A 5 "Error" || cat aws_debug.log | tail -n 20
+
+      # - name: Configure AWS Credentials (OIDC)
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: arn:aws:iam::935724796195:role/GitHubActionsTerraformRole
+      #     aws-region: ap-south-1
+      #     audience: sts.amazonaws.com
 
 
       - name: Terraform Init
