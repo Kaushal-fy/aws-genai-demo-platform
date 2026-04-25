@@ -1,44 +1,27 @@
+from app.llm.llm_client import LLMClient
+from app.llm.response_parser import ResponseParser
 from app.core.observability import log
 
 
 class DemoGenerator:
 
+    def __init__(self):
+        self.llm = LLMClient()
+        self.parser = ResponseParser()
+
     def generate(self, use_case: str, complexity: str):
 
-        log("generator_start", {
+        log("llm_request_start", {
             "use_case": use_case,
             "complexity": complexity
         })
 
-        components = [
-            "API Gateway",
-            "Auth Service",
-            "Payment Service",
-            "Database"
-        ]
+        raw_response = self.llm.call_model(use_case, complexity)
 
-        logs = [
-            f"{use_case}: service initialized",
-            f"{use_case}: request received"
-        ]
+        validated = self.parser.validate(raw_response)
 
-        insights = [
-            "Latency observed in downstream service"
-        ]
-
-        if complexity == "high":
-            logs.append("cascade failure detected")
-            insights.append("system-wide degradation observed")
-
-        log("generator_complete", {
-            "components": len(components),
-            "logs": len(logs),
-            "insights": len(insights)
+        log("llm_request_complete", {
+            "components": len(validated["components"])
         })
 
-        return {
-            "components": components,
-            "logs": logs,
-            "insights": insights
-        }"insights": insights
-        }
+        return validated
