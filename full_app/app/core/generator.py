@@ -1,11 +1,16 @@
-import random
+from app.core.observability import log
 
 
 class DemoGenerator:
 
     def generate(self, use_case: str, complexity: str):
 
-        base_components = [
+        log("generator_start", {
+            "use_case": use_case,
+            "complexity": complexity
+        })
+
+        components = [
             "API Gateway",
             "Auth Service",
             "Payment Service",
@@ -14,25 +19,26 @@ class DemoGenerator:
 
         logs = [
             f"{use_case}: service initialized",
-            f"{use_case}: request received",
-            f"{use_case}: processing started"
+            f"{use_case}: request received"
         ]
 
         insights = [
-            "Latency observed in downstream service",
-            "Retry mechanism triggered"
+            "Latency observed in downstream service"
         ]
 
         if complexity == "high":
             logs.append("cascade failure detected")
             insights.append("system-wide degradation observed")
 
-        # simulate randomness (future GenAI placeholder behavior)
-        if random.random() > 0.7:
-            insights.append("unexpected spike in traffic detected")
+        log("generator_complete", {
+            "components": len(components),
+            "logs": len(logs),
+            "insights": len(insights)
+        })
 
         return {
-            "components": base_components,
+            "components": components,
             "logs": logs,
             "insights": insights
+        }"insights": insights
         }
