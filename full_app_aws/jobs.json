@@ -1,0 +1,47 @@
+{
+  "21ae8074-881d-4897-8151-52f46a4f86af": {
+    "job_id": "21ae8074-881d-4897-8151-52f46a4f86af",
+    "status": "COMPLETED",
+    "payload": {
+      "use_case": "payment failed",
+      "complexity": "high"
+    },
+    "result": {
+      "demo_id": "676ed3c6-5275-4a68-b1e6-69a5450568e9",
+      "status": "generated",
+      "components": [
+        "API Gateway",
+        "Auth Service",
+        "Payment Service",
+        "Database"
+      ],
+      "logs": [
+        "payment failed: request received",
+        "payment failed: processing started",
+        "payment failed: timeout in service",
+        "cascade failure detected"
+      ],
+      "insights": [
+        "Increased latency in downstream service",
+        "Retry mechanism triggered",
+        "system-wide degradation observed",
+        "unusual traffic spike detected"
+      ],
+      "storage": {
+        "s3": {
+          "s3_key": "demo-3edbe317-25cc-4a0b-b656-b7abff6ba107.json",
+          "bucket": "genai-demo-platform-975049994880"
+        },
+        "db": {
+          "demo_id": "676ed3c6-5275-4a68-b1e6-69a5450568e9",
+          "status": "generated",
+          "created_at": "2026-04-25T15:33:54.643868",
+          "components_count": 4,
+          "logs_count": 4,
+          "insights_count": 4
+        }
+      }
+    },
+    "created_at": "2026-04-25T15:33:54.487063"
+  }
+}

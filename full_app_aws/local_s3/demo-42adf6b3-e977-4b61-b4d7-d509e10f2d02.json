@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-04-25T06:59:08.331194",
+  "data": {
+    "demo_id": "2f2ad20f-5937-49fe-99a1-6bad5bb412de",
+    "status": "generated",
+    "components": [
+      "API Gateway",
+      "Auth Service",
+      "Payment Service",
+      "Database"
+    ],
+    "logs": [
+      "ecommerce checkout: request received",
+      "ecommerce checkout: processing started",
+      "ecommerce checkout: timeout in service",
+      "cascade failure detected"
+    ],
+    "insights": [
+      "Increased latency in downstream service",
+      "Retry mechanism triggered",
+      "system-wide degradation observed"
+    ]
+  }
+}
