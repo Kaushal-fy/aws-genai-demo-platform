@@ -3,13 +3,19 @@ from app.core.observability import log, time_it, start_trace
 from app.storage.s3_store import S3Store
 from app.storage.db_store import DynamoDBStore
 import uuid
+import os
 
 
 class DemoService:
 
     def __init__(self):
         self.generator = DemoGenerator()
-        self.s3 = S3Store(bucket_name="genai-demo-platform-975049994880")
+        bucket_name = os.getenv("GENAI_S3_BUCKET")
+
+        if not bucket_name:
+            raise ValueError("GENAI_S3_BUCKET environment variable is required")
+
+        self.s3 = S3Store(bucket_name=bucket_name)
         self.db = DynamoDBStore()
 
     @time_it
