@@ -11,11 +11,15 @@ resource "null_resource" "worker_image" {
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-lc"]
-    command     = <<-EOT
+    # Use 'sudo docker' so the command works regardless of whether the
+    # current shell session has picked up the docker group membership.
+    # Terraform local-exec spawns a subprocess that may not inherit
+    # the group change made by 'usermod -aG docker ec2-user'.
+    command = <<-EOT
       set -euo pipefail
-      aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${split("/", aws_ecr_repository.worker.repository_url)[0]}
-      docker build -f ${local.app_source_dir}/Dockerfile.worker -t ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag} ${local.app_source_dir}
-      docker push ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag}
+      aws ecr get-login-password --region ${var.aws_region} | sudo docker login --username AWS --password-stdin ${split("/", aws_ecr_repository.worker.repository_url)[0]}
+      sudo docker build -f ${local.app_source_dir}/Dockerfile.worker -t ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag} ${local.app_source_dir}
+      sudo docker push ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag}
     EOT
   }
 }
