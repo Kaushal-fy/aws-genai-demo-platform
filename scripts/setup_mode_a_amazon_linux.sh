@@ -158,12 +158,22 @@ fi
 # =============================================================================
 step "Configuring HashiCorp yum repository for Terraform …"
 
-HASHICORP_REPO_URL="https://rpm.releases.hashicorp.com/AmazonLinux/${AL_VERSION}/hashicorp.repo"
-sudo $PKG_MGR config-manager --add-repo "$HASHICORP_REPO_URL" 2>/dev/null || \
-  sudo $PKG_MGR install -y yum-utils && \
-  sudo yum-config-manager --add-repo "$HASHICORP_REPO_URL"
+# HashiCorp publishes:
+#   AL2   → https://rpm.releases.hashicorp.com/AmazonLinux/2/hashicorp.repo
+#   AL2023 → no AmazonLinux/2023 path exists (returns 404).
+#            AL2023 is RHEL 9-based so use the RHEL/9 repo instead.
+if [[ $AL_VERSION -eq 2 ]]; then
+  HASHICORP_REPO_URL="https://rpm.releases.hashicorp.com/AmazonLinux/2/hashicorp.repo"
+else
+  HASHICORP_REPO_URL="https://rpm.releases.hashicorp.com/RHEL/9/hashicorp.repo"
+fi
 
-ok "HashiCorp repo configured"
+# dnf/yum config-manager --add-repo is the correct way to register the repo.
+# Ensure the plugin is present (dnf-utils / yum-utils) then add the repo.
+sudo $PKG_MGR install -y yum-utils
+sudo $PKG_MGR config-manager --add-repo "$HASHICORP_REPO_URL"
+
+ok "HashiCorp repo configured (${HASHICORP_REPO_URL})"
 
 step "Installing Terraform …"
 
