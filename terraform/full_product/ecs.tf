@@ -56,9 +56,9 @@ resource "aws_ecs_task_definition" "worker" {
         { name = "GENAI_USE_BEDROCK", value = tostring(var.enable_bedrock_runtime) },
         { name = "BEDROCK_MODEL_ID", value = var.bedrock_model_id },
         { name = "AWS_XRAY_DAEMON_ADDRESS", value = "127.0.0.1:2000" },
-        { name = "APPCONFIG_APPLICATION_ID", value = aws_appconfig_application.main.id },
-        { name = "APPCONFIG_ENVIRONMENT_ID", value = aws_appconfig_environment.main.environment_id },
-        { name = "APPCONFIG_CONFIGURATION_PROFILE_ID", value = aws_appconfig_configuration_profile.runtime.configuration_profile_id }
+        { name = "APPCONFIG_APPLICATION_ID", value = try(aws_appconfig_application.main[0].id, "") },
+        { name = "APPCONFIG_ENVIRONMENT_ID", value = try(aws_appconfig_environment.main[0].environment_id, "") },
+        { name = "APPCONFIG_CONFIGURATION_PROFILE_ID", value = try(aws_appconfig_configuration_profile.runtime[0].configuration_profile_id, "") }
       ]
       logConfiguration = {
         logDriver = "awslogs"
