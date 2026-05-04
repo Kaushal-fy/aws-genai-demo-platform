@@ -184,3 +184,15 @@ variable "redshift_base_capacity" {
   type        = number
   default     = 32
 }
+
+variable "enable_lambda_api" {
+  description = "Set to false to skip Lambda + API Gateway creation. Useful in accounts where an SCP blocks lambda:CreateFunction."
+  type        = bool
+  default     = true
+}
+
+variable "enable_appconfig" {
+  description = "Set to false to skip AppConfig creation. Useful in accounts where an SCP blocks appconfig:CreateApplication."
+  type        = bool
+  default     = true
+}

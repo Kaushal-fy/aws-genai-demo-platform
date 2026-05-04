@@ -47,7 +47,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           stat    = "Sum"
           period  = 60
           metrics = [
-            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.api.function_name],
+            ["AWS/Lambda", "Invocations", "FunctionName", var.enable_lambda_api ? aws_lambda_function.api[0].function_name : "DISABLED"],
             [".", "Errors", ".", "."]
           ]
         }
@@ -106,6 +106,8 @@ resource "aws_cloudwatch_metric_alarm" "queue_backlog" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  count = var.enable_lambda_api ? 1 : 0
+
   alarm_name          = "${local.name_prefix}-lambda-errors"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
@@ -117,6 +119,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_description   = "The API Lambda returned at least one error in the last minute"
 
   dimensions = {
-    FunctionName = aws_lambda_function.api.function_name
+    FunctionName = aws_lambda_function.api[0].function_name
   }
 }

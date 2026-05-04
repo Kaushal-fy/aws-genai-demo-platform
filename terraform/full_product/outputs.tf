@@ -1,11 +1,11 @@
 output "api_base_url" {
-  description = "HTTP API base URL for the serverless entrypoint."
-  value       = aws_apigatewayv2_stage.prod.invoke_url
+  description = "HTTP API base URL for the serverless entrypoint. Null when enable_lambda_api = false."
+  value       = try(aws_apigatewayv2_stage.prod[0].invoke_url, null)
 }
 
 output "lambda_function_name" {
-  description = "Lambda function serving API Gateway requests."
-  value       = aws_lambda_function.api.function_name
+  description = "Lambda function serving API Gateway requests. Null when enable_lambda_api = false."
+  value       = try(aws_lambda_function.api[0].function_name, null)
 }
 
 output "worker_cluster_name" {
@@ -44,8 +44,8 @@ output "artifact_bucket_name" {
 }
 
 output "appconfig_application_id" {
-  description = "AppConfig application ID for runtime configuration governance."
-  value       = aws_appconfig_application.main.id
+  description = "AppConfig application ID for runtime configuration governance. Null when enable_appconfig = false."
+  value       = try(aws_appconfig_application.main[0].id, null)
 }
 
 output "ssm_parameter_prefix" {

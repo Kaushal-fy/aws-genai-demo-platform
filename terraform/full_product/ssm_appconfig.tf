@@ -29,26 +29,34 @@ resource "aws_ssm_parameter" "bedrock_model_id" {
 }
 
 resource "aws_appconfig_application" "main" {
+  count = var.enable_appconfig ? 1 : 0
+
   name        = "${local.name_prefix}-appconfig"
   description = "AppConfig application for GenAI platform runtime controls"
 }
 
 resource "aws_appconfig_environment" "main" {
-  application_id = aws_appconfig_application.main.id
+  count = var.enable_appconfig ? 1 : 0
+
+  application_id = aws_appconfig_application.main[0].id
   name           = var.environment
   description    = "${var.environment} environment"
 }
 
 resource "aws_appconfig_configuration_profile" "runtime" {
-  application_id = aws_appconfig_application.main.id
+  count = var.enable_appconfig ? 1 : 0
+
+  application_id = aws_appconfig_application.main[0].id
   location_uri   = "hosted"
   name           = "runtime-config"
   type           = "AWS.Freeform"
 }
 
 resource "aws_appconfig_hosted_configuration_version" "runtime" {
-  application_id           = aws_appconfig_application.main.id
-  configuration_profile_id = aws_appconfig_configuration_profile.runtime.configuration_profile_id
+  count = var.enable_appconfig ? 1 : 0
+
+  application_id           = aws_appconfig_application.main[0].id
+  configuration_profile_id = aws_appconfig_configuration_profile.runtime[0].configuration_profile_id
   content_type             = "application/json"
 
   content = jsonencode({
@@ -65,10 +73,12 @@ resource "aws_appconfig_hosted_configuration_version" "runtime" {
 }
 
 resource "aws_appconfig_deployment" "runtime" {
-  application_id           = aws_appconfig_application.main.id
-  configuration_profile_id = aws_appconfig_configuration_profile.runtime.configuration_profile_id
-  configuration_version    = aws_appconfig_hosted_configuration_version.runtime.version_number
+  count = var.enable_appconfig ? 1 : 0
+
+  application_id           = aws_appconfig_application.main[0].id
+  configuration_profile_id = aws_appconfig_configuration_profile.runtime[0].configuration_profile_id
+  configuration_version    = aws_appconfig_hosted_configuration_version.runtime[0].version_number
   deployment_strategy_id   = "AppConfig.AllAtOnce"
-  environment_id           = aws_appconfig_environment.main.environment_id
+  environment_id           = aws_appconfig_environment.main[0].environment_id
   description              = "Initial runtime configuration deployment"
 }

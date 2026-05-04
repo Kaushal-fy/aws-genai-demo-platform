@@ -17,3 +17,8 @@ enable_redshift_serverless = false
 # Only set these if you enable Redshift Serverless.
 redshift_admin_username = "genaiadmin"
 redshift_admin_password = null
+
+# SCP compatibility: set to false if the account SCP blocks Lambda or AppConfig.
+# The ECS worker, DynamoDB, SQS, S3, and ECR still deploy correctly without them.
+enable_lambda_api = true
+enable_appconfig  = true
