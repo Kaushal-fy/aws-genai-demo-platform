@@ -82,8 +82,17 @@ ok "System packages updated"
 # 3. Install utilities
 # =============================================================================
 step "Installing utilities (git, unzip, jq, curl, wget) …"
-sudo $PKG_MGR install -y git unzip jq curl wget
-ok "Utilities installed"
+
+if [[ $AL_VERSION -eq 2023 ]]; then
+  # AL2023 ships with curl-minimal which provides the curl binary but conflicts
+  # with the full curl package.  Install everything else and leave curl-minimal
+  # in place.  The curl binary is already functional for our purposes.
+  sudo $PKG_MGR install -y git unzip jq wget
+  ok "Utilities installed (curl already provided by curl-minimal on AL2023)"
+else
+  sudo $PKG_MGR install -y git unzip jq curl wget
+  ok "Utilities installed"
+fi
 
 # =============================================================================
 # 4. Install Docker and start the daemon
