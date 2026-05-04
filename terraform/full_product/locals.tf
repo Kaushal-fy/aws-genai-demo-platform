@@ -28,8 +28,8 @@ locals {
   app_source_dir       = abspath("${path.module}/../../full_app_aws")
   worker_image_uri     = coalesce(var.prebuilt_worker_image_uri, "${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag}")
   worker_source_files = distinct(concat(
-    fileset(local.app_source_dir, "app/**/*.py"),
-    fileset(local.app_source_dir, "*.py"),
+    tolist(fileset(local.app_source_dir, "app/**/*.py")),
+    tolist(fileset(local.app_source_dir, "*.py")),
     ["Dockerfile.worker"]
   ))
 }

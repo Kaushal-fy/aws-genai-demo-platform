@@ -40,6 +40,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "artifacts" {
     id     = "cleanup-noncurrent-versions"
     status = "Enabled"
 
+    # filter block is required by the AWS provider (even when applying to all objects)
+    filter {}
+
     noncurrent_version_expiration {
       noncurrent_days = 30
     }
