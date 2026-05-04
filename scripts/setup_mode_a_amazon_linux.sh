@@ -154,43 +154,89 @@ else
 fi
 
 # =============================================================================
-# 6. Install Terraform via HashiCorp yum repository
+# 6. Install Terraform
+#
+# Strategy:
+#   AL2    → HashiCorp yum repo (AmazonLinux/2) + yum install terraform
+#   AL2023 → Direct binary download from releases.hashicorp.com
+#            HashiCorp does NOT publish a yum repo for AL2023 (all known
+#            paths return HTTP 404), so the binary method is the only
+#            reliable option.
 # =============================================================================
-step "Configuring HashiCorp yum repository for Terraform …"
 
-# HashiCorp publishes:
-#   AL2   → https://rpm.releases.hashicorp.com/AmazonLinux/2/hashicorp.repo
-#   AL2023 → no AmazonLinux/2023 path exists (returns 404).
-#            AL2023 is RHEL 9-based so use the RHEL/9 repo instead.
-if [[ $AL_VERSION -eq 2 ]]; then
-  HASHICORP_REPO_URL="https://rpm.releases.hashicorp.com/AmazonLinux/2/hashicorp.repo"
-else
-  HASHICORP_REPO_URL="https://rpm.releases.hashicorp.com/RHEL/9/hashicorp.repo"
-fi
+_install_terraform_via_binary() {
+  local arch
+  arch=$(uname -m)
+  local tf_arch
+  case "$arch" in
+    x86_64)          tf_arch="amd64" ;;
+    aarch64|arm64)   tf_arch="arm64" ;;
+    *)               die "Unsupported architecture for Terraform binary download: $arch" ;;
+  esac
 
-# dnf/yum config-manager --add-repo is the correct way to register the repo.
-# Ensure the plugin is present (dnf-utils / yum-utils) then add the repo.
-sudo $PKG_MGR install -y yum-utils
-sudo $PKG_MGR config-manager --add-repo "$HASHICORP_REPO_URL"
+  step "Fetching latest Terraform version from HashiCorp checkpoint API …"
+  local tf_version
+  tf_version=$(curl -fsSL "https://checkpoint-api.hashicorp.com/v1/check/terraform" \
+               | jq -r '.current_version')
+  [[ -z "$tf_version" ]] && die "Could not determine latest Terraform version from checkpoint API."
 
-ok "HashiCorp repo configured (${HASHICORP_REPO_URL})"
+  # Ensure the fetched version satisfies the minimum
+  local lowest
+  lowest=$(printf '%s\n%s' "$TF_MIN_VERSION" "$tf_version" | sort -V | head -1)
+  if [[ "$lowest" != "$TF_MIN_VERSION" ]]; then
+    die "Latest Terraform version $tf_version is below required $TF_MIN_VERSION – this is unexpected. Check the checkpoint API."
+  fi
+
+  local tf_zip="terraform_${tf_version}_linux_${tf_arch}.zip"
+  local tf_url="https://releases.hashicorp.com/terraform/${tf_version}/${tf_zip}"
+
+  step "Downloading Terraform ${tf_version} (${tf_arch}) …"
+  local tmp
+  tmp=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" EXIT
+  curl -fsSL "$tf_url" -o "$tmp/$tf_zip"
+  unzip -q "$tmp/$tf_zip" -d "$tmp"
+  sudo install -o root -g root -m 0755 "$tmp/terraform" /usr/local/bin/terraform
+  rm -rf "$tmp"
+
+  ok "Terraform $(terraform version | head -1) installed to /usr/local/bin/terraform"
+}
+
+_install_terraform_via_repo() {
+  step "Configuring HashiCorp yum repository for Terraform (AL2) …"
+  sudo $PKG_MGR install -y yum-utils
+  sudo yum-config-manager --add-repo \
+    "https://rpm.releases.hashicorp.com/AmazonLinux/2/hashicorp.repo"
+  ok "HashiCorp repo configured"
+
+  sudo $PKG_MGR install -y terraform
+  ok "Terraform installed: $(terraform version | head -1)"
+}
 
 step "Installing Terraform …"
 
 if command -v terraform &>/dev/null; then
-  INSTALLED_TF=$(terraform version -json 2>/dev/null | jq -r '.terraform_version' 2>/dev/null || terraform version | head -1 | grep -oP '\d+\.\d+\.\d+')
-  # Simple version comparison using sort -V
+  INSTALLED_TF=$(terraform version -json 2>/dev/null \
+    | jq -r '.terraform_version' 2>/dev/null \
+    || terraform version | head -1 | grep -oP '\d+\.\d+\.\d+')
   LOWEST=$(printf '%s\n%s' "$TF_MIN_VERSION" "$INSTALLED_TF" | sort -V | head -1)
   if [[ "$LOWEST" == "$TF_MIN_VERSION" ]]; then
-    ok "Terraform $INSTALLED_TF already satisfies ≥ $TF_MIN_VERSION"
+    ok "Terraform $INSTALLED_TF already satisfies ≥ $TF_MIN_VERSION – skipping install"
   else
-    warn "Installed Terraform $INSTALLED_TF is older than required $TF_MIN_VERSION – upgrading …"
-    sudo $PKG_MGR install -y terraform
-    ok "Terraform upgraded: $(terraform version | head -1)"
+    warn "Installed Terraform $INSTALLED_TF < required $TF_MIN_VERSION – upgrading …"
+    if [[ $AL_VERSION -eq 2 ]]; then
+      _install_terraform_via_repo
+    else
+      _install_terraform_via_binary
+    fi
   fi
 else
-  sudo $PKG_MGR install -y terraform
-  ok "Terraform installed: $(terraform version | head -1)"
+  if [[ $AL_VERSION -eq 2 ]]; then
+    _install_terraform_via_repo
+  else
+    _install_terraform_via_binary
+  fi
 fi
 
 # =============================================================================
