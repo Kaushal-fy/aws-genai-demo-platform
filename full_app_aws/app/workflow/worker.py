@@ -15,32 +15,49 @@ class Worker:
 
         while True:
 
-            job_id = self.job_queue.pop()
+            message = self.job_queue.pop()
 
-            if not job_id:
+            if not message:
                 time.sleep(1)
                 continue
+
+            job_id = message["job_id"]
+            receipt_handle = message["receipt_handle"]
 
             job = self.job_store.get_job(job_id)
 
             if not job:
+                # Drop stale queue message with no matching job record.
+                self.job_queue.ack(receipt_handle)
                 continue
 
-            log("worker_start", {"job_id": job_id})
+            try:
+                log("worker_start", {"job_id": job_id})
 
-            self.job_store.update_job(job_id, "RUNNING")
+                self.job_store.update_job(job_id, "RUNNING")
 
-            payload = job["payload"]
+                payload = job["payload"]
 
-            result = self.service.create_demo(
-                payload["use_case"],
-                payload["complexity"]
-            )
+                result = self.service.create_demo(
+                    payload["use_case"],
+                    payload["complexity"]
+                )
 
-            self.job_store.update_job(
-                job_id,
-                "COMPLETED",
-                result
-            )
+                self.job_store.update_job(
+                    job_id,
+                    "COMPLETED",
+                    result
+                )
 
-            log("worker_complete", {"job_id": job_id})
+                self.job_queue.ack(receipt_handle)
+                log("worker_complete", {"job_id": job_id})
+            except Exception as exc:
+                self.job_store.update_job(
+                    job_id,
+                    "FAILED",
+                    {"error": str(exc)}
+                )
+
+                # Leave message unacked so SQS can redeliver after visibility timeout.
+                log("worker_error", {"job_id": job_id, "error": str(exc)})
+                time.sleep(1)

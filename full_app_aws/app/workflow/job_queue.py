@@ -1,38 +1,56 @@
-import json
 import os
+import boto3
 
 
 class JobQueue:
 
-    def __init__(self, file_path="queue.json"):
-        self.file_path = file_path
+    def __init__(self, queue_name=None):
+        resolved_queue_name = queue_name or os.getenv("GENAI_QUEUE_NAME")
+        region_name = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
 
-        if not os.path.exists(self.file_path):
-            with open(self.file_path, "w") as f:
-                json.dump([], f)
+        if not resolved_queue_name:
+            raise ValueError("GENAI_QUEUE_NAME environment variable is required")
 
-    def _read(self):
-        with open(self.file_path, "r") as f:
-            return json.load(f)
+        if not region_name:
+            raise ValueError("AWS_REGION or AWS_DEFAULT_REGION environment variable is required")
 
-    def _write(self, data):
-        with open(self.file_path, "w") as f:
-            json.dump(data, f, indent=2)
+        self.queue_name = resolved_queue_name
+        sqs_client = boto3.client("sqs", region_name=region_name)
+        
+        # Get queue URL from queue name
+        response = sqs_client.get_queue_url(QueueName=self.queue_name)
+        self.queue_url = response["QueueUrl"]
+        self.sqs = sqs_client
 
     def push(self, job_id: str):
-
-        queue = self._read()
-        queue.append(job_id)
-        self._write(queue)
+        """Send job_id to SQS queue"""
+        self.sqs.send_message(
+            QueueUrl=self.queue_url,
+            MessageBody=job_id
+        )
 
     def pop(self):
+        """Receive one message from SQS queue without deleting it."""
+        response = self.sqs.receive_message(
+            QueueUrl=self.queue_url,
+            MaxNumberOfMessages=1,
+            WaitTimeSeconds=10
+        )
 
-        queue = self._read()
+        messages = response.get("Messages", [])
 
-        if not queue:
+        if not messages:
             return None
 
-        job_id = queue.pop(0)
-        self._write(queue)
+        message = messages[0]
+        return {
+            "job_id": message["Body"],
+            "receipt_handle": message["ReceiptHandle"]
+        }
 
-        return job_id
+    def ack(self, receipt_handle: str):
+        """Delete a processed message from SQS queue."""
+        self.sqs.delete_message(
+            QueueUrl=self.queue_url,
+            ReceiptHandle=receipt_handle
+        )

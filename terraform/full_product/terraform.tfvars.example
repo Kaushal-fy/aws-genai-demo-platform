@@ -1,0 +1,19 @@
+aws_region             = "us-east-1"
+project_name           = "genai-demo"
+environment            = "prod"
+worker_image_tag       = "v1"
+artifact_bucket_name   = null
+bedrock_model_id       = "anthropic.claude-3-sonnet-20240229-v1:0"
+enable_bedrock_runtime = true
+
+# Mode A: build the ECS worker image automatically with local Docker.
+build_worker_image        = true
+prebuilt_worker_image_uri = null
+
+# Analytics defaults.
+enable_glue_athena         = true
+enable_redshift_serverless = false
+
+# Only set these if you enable Redshift Serverless.
+redshift_admin_username = "genaiadmin"
+redshift_admin_password = null

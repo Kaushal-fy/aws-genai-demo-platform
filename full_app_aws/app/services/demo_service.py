@@ -36,14 +36,23 @@ class DemoService:
         response = {
             "demo_id": demo_id,
             "status": "generated",
+            "use_case": use_case,
+            "complexity": complexity,
             **result
         }
 
         # 2. Store full payload in "S3"
         s3_result = self.s3.upload_demo(response)
 
-        # 3. Store metadata in "DynamoDB"
-        db_record = self.db.save_metadata(response)
+        metadata_payload = {
+            **response,
+            "storage": {
+                "s3": s3_result
+            }
+        }
+
+        # 3. Store metadata in DynamoDB
+        db_record = self.db.save_metadata(metadata_payload)
 
         log("persistence_complete", {
             "demo_id": demo_id,
