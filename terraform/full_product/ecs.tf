@@ -17,9 +17,19 @@ resource "null_resource" "worker_image" {
     # the group change made by 'usermod -aG docker ec2-user'.
     command = <<-EOT
       set -euo pipefail
-      aws ecr get-login-password --region ${var.aws_region} | sudo docker login --username AWS --password-stdin ${split("/", aws_ecr_repository.worker.repository_url)[0]}
-      sudo docker build -f ${local.app_source_dir}/Dockerfile.worker -t ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag} ${local.app_source_dir}
-      sudo docker push ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag}
+      DOCKER_BIN="$(command -v docker || true)"
+      if [[ -z "$DOCKER_BIN" && -x /usr/bin/docker ]]; then
+        DOCKER_BIN="/usr/bin/docker"
+      fi
+
+      if [[ -z "$DOCKER_BIN" ]]; then
+        echo "docker binary not found. Install Docker and ensure it is on PATH before running terraform apply."
+        exit 1
+      fi
+
+      aws ecr get-login-password --region ${var.aws_region} | sudo "$DOCKER_BIN" login --username AWS --password-stdin ${split("/", aws_ecr_repository.worker.repository_url)[0]}
+      sudo "$DOCKER_BIN" build -f ${local.app_source_dir}/Dockerfile.worker -t ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag} ${local.app_source_dir}
+      sudo "$DOCKER_BIN" push ${aws_ecr_repository.worker.repository_url}:${var.worker_image_tag}
     EOT
   }
 }

@@ -53,3 +53,17 @@ Thumbs.db
 # Jupyter Notebook checkpoints
 # =====================
 .ipynb_checkpoints/
+
+# =====================
+# Terraform local state/artifacts
+# =====================
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+tfplan
+graph.dot
+lambda_bundle.zip
+.terraform.lock.hcl

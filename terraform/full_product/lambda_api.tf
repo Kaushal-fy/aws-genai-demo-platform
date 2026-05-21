@@ -17,7 +17,7 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      AWS_REGION        = var.aws_region
+#     AWS_REGION        = var.aws_region
       GENAI_JOBS_TABLE  = aws_dynamodb_table.jobs.name
       GENAI_QUEUE_NAME  = aws_sqs_queue.jobs.name
       GENAI_S3_BUCKET   = aws_s3_bucket.artifacts.bucket
